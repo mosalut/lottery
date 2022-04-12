@@ -4,7 +4,6 @@ pragma solidity ^0.8.9;
 /*
 	Develop by mosalut
 */
-
 import "@openzeppelin/contracts/access/Ownable.sol";
 // import "@openzeppelin/contracts/utils/Strings.sol";
 
@@ -67,13 +66,14 @@ contract Lottery is Ownable {
 		Set the timestamp through arg0
 	*/
 	function createRound(uint _timestamp) external onlyOwner {
-		require(!inRound, "createRound: In a round now!");
-		require(_timestamp > block.timestamp, "createRound: Each round shound at least have one 5 minute for the users to ready");
-		require(_timestamp - block.timestamp > 300, "createRound: Each round shound at least have one 5 minute for the users to ready");
-		timestamp = _timestamp;
+		require(block.timestamp >= timestamp, "createRound: In a round now");
+		require(_timestamp > block.timestamp, "createRound: Each round shound at least have one 5 minute for the users to ready 1");
+		require(_timestamp - block.timestamp > 300, "createRound: Each round shound at least have one 5 minute for the users to ready 2");
 
 		orderNumber++;
-		winNumbers[orderNumber] = uint16(lastBlockTimestamp * _timestamp % 10000);
+		winNumbers[orderNumber] = uint16(timestamp * _timestamp % 10000);
+
+		timestamp = _timestamp;
 
 		inRound = true;
 		emit CreateRound(_timestamp);
@@ -88,6 +88,7 @@ contract Lottery is Ownable {
 		// Withdraw and clean it.
 
 		// stake * 5, 1 stake cost 5DAI
+		require(stake > 0, "chipIn: stake should > 0!");
 		require(dai.balanceOf(msg.sender) >= stake * 5, "chipIn: You've not enough DAI!");
 		require(numbers < 10000, "chipIn: Number should less than 10000!");
 
@@ -107,15 +108,20 @@ contract Lottery is Ownable {
 			if(_orderNumber != orderNumber || !inRound) {
 				// if win
 				if(chipInNumbers[msg.sender] == winNumbers[_orderNumber]) {
-					// 5e18 = 1e17 * 5, cause 1 stake cost 5 DAI.
-					uint rewardWithFee = totalStakes[_orderNumber] * 5e17 / countWinStakes(_orderNumber) / 5e17;
+					winnerPoints[_orderNumber]++;
+					winners[_orderNumber].push(msg.sender);
+
+					uint winStakes = countWinStakes(_orderNumber);
+					// 5e18 = 1e18 * 5, cause 1 stake cost 5 DAI.
+					uint rewardWithFee = totalStakes[_orderNumber] * 5e18 * stakes[msg.sender] / winStakes;
 					uint reward = rewardWithFee * 80 / 100;
 
+					
 					pools[_orderNumber] -= rewardWithFee;
 
 					// Because fee account is the same as reward account
 					// so needn't recieve fee after below oparation.
-					dai.transferFrom(address(dai), msg.sender, reward);
+					dai.transfer(msg.sender, reward);
 
 					emit Reward(_orderNumber, msg.sender, reward);
 				}
@@ -131,8 +137,14 @@ contract Lottery is Ownable {
 		// update the user's chip in number.
 		chipInNumbers[msg.sender] = numbers;
 
+		// update the totalStakes of order number.
+		totalStakes[orderNumber] += stake;
+
+		// update the pool of order number.
+		pools[orderNumber] += stake * 5e18;
+
 		// chip in pay.
-		dai.transferFrom(msg.sender, address(dai), stake * 5e17);
+		dai.transferFrom(msg.sender, address(this), stake * 5e18);
 	}
 
 	/*
@@ -210,4 +222,29 @@ contract Lottery is Ownable {
 
 		return (orderNumber, timestamp, winNumbers[orderNumber], 10000, 0);
 	}
+
+	/*
+		@mosalut
+		
+		If inRound is true returns the newest order number.
+		If inRound is false returns 0.
+	*/
+	function runingRound() view public returns(uint128) {
+		if(inRound) {
+			return orderNumber;
+		}
+
+		return 0;
+	}
+
+	/*
+		@mosalut
+		For debug, get win number.
+		Release it, when testing.
+	*/
+	/*
+	function debug() view public returns(uint16) {
+		return winNumbers[orderNumber];
+	}
+	*/
 }

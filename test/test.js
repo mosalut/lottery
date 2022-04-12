@@ -21,6 +21,7 @@ beforeEach(async function () {
 	console.log("lottery deployed to:", lottery.address);
 
 	await dai.approve(lottery.address, ethers.utils.parseEther("100000000"));
+	console.log("allowance:", await dai.allowance(dai.address, lottery.address));
 	await dai.transferOwnership(lottery.address);
 });
 
@@ -53,13 +54,25 @@ describe("Lottery", function () {
 		await lottery.createRound(timestamp + 600);
 
 		await dai.transfer(accounts[1].address, ethers.utils.parseEther("100000"));
+		console.log("account1:", await dai.balanceOf(accounts[1].address));
+		console.log("dai:", await dai.balanceOf(dai.address));
 
 		await dai.connect(accounts[1]).approve(lottery.address, ethers.utils.parseEther("500")); 
-		await lottery.connect(accounts[1]).chipIn(10, 4567);
+		let winNumber = await lottery.debug();
+		await lottery.connect(accounts[1]).chipIn(10, winNumber);
 
 		await network.provider.send("evm_increaseTime", [1000])
-		await network.provider.send("evm_mine") // this one will have 02:00 PM as its timestamp
+		await network.provider.send("evm_mine");
 
 		console.log(await lottery.lastStake(accounts[1].address));
+		console.log(await lottery.runingRound());
+		await network.provider.send("evm_mine");
+		timestamp = Date.parse(new Date()) / 1000;
+		await network.provider.send("evm_increaseTime", [1000])
+		await network.provider.send("evm_mine");
+		await lottery.createRound(timestamp + 2600);
+		await lottery.connect(accounts[1]).chipIn(1, winNumber);
+		console.log("account1:", await dai.balanceOf(accounts[1].address));
+		console.log("dai:", await dai.balanceOf(dai.address));
 	});
 });
