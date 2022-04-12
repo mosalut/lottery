@@ -1,7 +1,8 @@
 const hre = require("hardhat");
 
 async function main() {
-	deployDai();
+	await deployDai();
+	await deployLottery();
 }
 
 main().then(() => process.exit(0)).catch((error) => {
@@ -9,9 +10,13 @@ main().then(() => process.exit(0)).catch((error) => {
 	process.exit(1);
 });
 
+var dai;
+var lottery;
+
 async function deployDai() {
+	accounts = await ethers.getSigners();
 	const Dai = await hre.ethers.getContractFactory("Dai");
-	const dai = await Dai.deploy();
+	dai = await Dai.deploy();
 
 	await dai.deployed();
 
@@ -21,7 +26,8 @@ async function deployDai() {
 
 async function deployLottery() {
 	const Lottery = await hre.ethers.getContractFactory("Lottery");
-	const lottery = await Lottery.deploy(dai.address, "0xe925a77b1dC55803d35D84d01105DBD4a4b47560");
+//	lottery = await Lottery.deploy(dai.address, "0xe925a77b1dC55803d35D84d01105DBD4a4b47560");
+	lottery = await Lottery.deploy(dai.address);
 
 	await lottery.deployed();
 
