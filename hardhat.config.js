@@ -33,7 +33,7 @@ module.exports = {
 		},
 		testnet: {
 			url: "https://eth-ropsten.alchemyapi.io/v2/q9dkePbPFo_irrYcnQdyYegtY5z8XcK-",
-			chainId: 97,
+			chainId: 3,
 			gasPrice: 20000000000,
 			accounts: ["0x6473d773ad0941f0b096083b9823435c5f955bef3f878578b3cf7856dec81779"]
 		}
