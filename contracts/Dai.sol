@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts-upgradeable/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Dai is ERC20, Ownable {
-	constructor () external ERC20("DAI", "DAI") {}
+	constructor () ERC20("DAI", "DAI") {}
 
 	/*
 		Mint tokens while deploy.
